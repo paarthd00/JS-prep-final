@@ -14,8 +14,7 @@ export async function createPost(
     }: {
         userId: number,
         content: string
-    }
-) {
+    }) {
     let postData;
 
     try {
@@ -47,16 +46,27 @@ export async function createUser(
         password: string
     }
 ) {
+
     let signedUser;
+
     try {
         //@ts-ignore
         const salt = bcrypt.genSaltSync(saltRounds);
         const hash = bcrypt.hashSync(password, salt);
+
+        const userInDB = await db.select().from(users).where(eq(users.username, userName)).then((res)=>res[0])
+
+        if(userInDB){
+            return { "failure": "user already exists" }
+        }
+
         signedUser = await db.insert(users).values({
             "username": userName,
             "password": hash
         }).returning().run()
+
         cookies().set("user_name", userName);
+
     } catch (err) {
         return { "failure": "Unable to add user" }
     }
@@ -77,10 +87,13 @@ export async function Login(
     }
 ){
     try{
-        let currentUser = await db.select().from(users).where(eq(users.username, userName)).then((res)=>res[0])
+        let currentUser = await db.select()
+            .from(users)
+            .where(eq(users.username, userName))
+            .then((res)=>res[0])
+
         if(currentUser && bcrypt.compareSync(password, currentUser.password)){
             cookies().set("user_name", currentUser.username)
-
             return { "success": "user log in"} 
         } else{
             throw new Error("Unable to log in")
@@ -90,10 +103,12 @@ export async function Login(
     }
 }
 
-
 export async function getAllPost() {
     try{
-        const allPosts = await db.select().from(users).innerJoin(posts, eq(users.id, posts.userId));
+        const allPosts = await db.select()
+            .from(users)
+            .innerJoin(posts, eq(users.id, posts.userId));
+
         if(allPosts){
             return {
                 "success": "all posts",
@@ -108,16 +123,18 @@ export async function getAllPost() {
 }
 // get single post from db based on the post id passed in the params
 
-export async function getSinglePost({
-    postId
-}:{
-    postId: number
-}) {
+export async function getSinglePost(
+    {
+        postId
+    }:{
+        postId: number
+    }) {
     try{
         const singlePost = await db.select()
             .from(posts)
             .where(eq(posts.id, postId))
             .then((res)=>res[0]);
+
         if(singlePost){
             return {
                 "success": "single post",
