@@ -35,6 +35,88 @@ export async function createPost(
     }
 }
 
+export async function getAllPost() {
+    try {
+        const allPosts = await db.select()
+            .from(users)
+            .innerJoin(posts, eq(users.id, posts.userId));
+
+        if (allPosts) {
+            return {
+                "success": "all posts",
+                "posts": allPosts
+            }
+        } else {
+            return { "error": "cannot find posts" }
+        }
+    } catch (err) {
+        return { "error": "cannot find posts" }
+    }
+}
+
+export async function getSinglePost(
+    {
+        postId
+    }: {
+        postId: number
+    }) {
+    try {
+        const singlePost = await db.select()
+            .from(posts)
+            .where(eq(posts.id, postId))
+            .then((res) => res[0]);
+
+        if (singlePost) {
+            return {
+                "success": "single post",
+                "post": singlePost
+            }
+        } else {
+            return { "error": "cannot find post" }
+        }
+    } catch (err) {
+        return { "error": "cannot find post" }
+    }
+}
+
+
+export async function updatePost(
+    {
+        postId,
+        content
+    }: {
+        postId: number,
+        content: string
+    }) {
+    try {
+        await db.update(posts).set({
+            "content": content
+        }).where(eq(posts.id, postId));
+
+        return {
+            "success": "post updated"
+        }
+    } catch (err) {
+        return { "error": "cannot update post" }
+    }
+}
+
+export async function deletePost(
+    {
+        postId
+    }: {
+        postId: number
+    }) {
+    try {
+        await db.delete(posts).where(eq(posts.id, postId));
+        return {
+            "success": "post deleted"
+        }
+    } catch (err) {
+        return { "error": "cannot delete post" }
+    }
+}
+
 export async function deleteUser(
     { userId }: { userId: number }
 ) {
@@ -91,7 +173,6 @@ export async function signUp(
     }
 ) {
     let addedUser = await createUser({ userName, password });
-    // if(!addedUser.failure){
     jwt.sign({ user: userName }, process.env.SECRET, (err: Error, token: string) => {
         if (err) {
             console.log(err);
@@ -104,10 +185,6 @@ export async function signUp(
         "success": "Signed up user successfully",
         user: addedUser
     }
-
-    // } else{
-    //     return {"failure": "Error While Signing up user"} 
-    // }
 }
 
 export async function Login(
@@ -145,47 +222,4 @@ export async function Login(
     }
 }
 
-export async function getAllPost() {
-    try {
-        const allPosts = await db.select()
-            .from(users)
-            .innerJoin(posts, eq(users.id, posts.userId));
-
-        if (allPosts) {
-            return {
-                "success": "all posts",
-                "posts": allPosts
-            }
-        } else {
-            return { "error": "cannot find posts" }
-        }
-    } catch (err) {
-        return { "error": "cannot find posts" }
-    }
-}
-
-export async function getSinglePost(
-    {
-        postId
-    }: {
-        postId: number
-    }) {
-    try {
-        const singlePost = await db.select()
-            .from(posts)
-            .where(eq(posts.id, postId))
-            .then((res) => res[0]);
-
-        if (singlePost) {
-            return {
-                "success": "single post",
-                "post": singlePost
-            }
-        } else {
-            return { "error": "cannot find post" }
-        }
-    } catch (err) {
-        return { "error": "cannot find post" }
-    }
-}
 

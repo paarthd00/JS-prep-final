@@ -4,13 +4,13 @@ import {
   Login,
   getAllPost,
   getSinglePost,
+  deleteUser,
 } from './actions';
 var crypto = require("crypto");
-// Sample test data
-const testUserName =  crypto.randomBytes(20).toString('hex');
+const testUserName = crypto.randomBytes(20).toString('hex');
 const testPassword = 'testPassword';
 
-test('createUser', async () => {
+test('create and delete User', async () => {
   const result = await createUser({
     userName: testUserName,
     password: testPassword,
@@ -19,6 +19,12 @@ test('createUser', async () => {
   expect(result.id).toBeDefined();
   expect(result.username).toBe(testUserName);
   expect(result.password).toBeDefined();
+
+  if (result.id) {
+    const userId = Number(result.id); 
+    let resp = await deleteUser({ userId });
+    expect(resp).toBe(userId);
+  }
 });
 
 test('Login', async () => {
@@ -46,4 +52,29 @@ test('getSinglePost', async () => {
 
   expect(result.success).toBe('single post');
   expect(result.post).toBeDefined();
+});
+
+
+test('updatepost', async () => {
+  // const postIdToUpdate = 2;
+  
+  // const result = await updatePost({
+  //   postId: postIdToUpdate,
+  //   content: 'updatedPost',
+  // });
+
+  // expect(result.success).toBe('post updated');
+
+});
+
+
+test('deletepost', async () => {
+  // const postIdToDelete = 2;
+  
+  // const result = await DeletePost({
+  //   postId: postIdToUpdate,
+  // });
+
+  // expect(result.success).toBe('post deleted');
+
 });
