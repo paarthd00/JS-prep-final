@@ -3,7 +3,7 @@ import { db } from "../db/index"
 import { users } from "../db/schema/users"
 import { posts } from "../db/schema/posts"
 import { cookies } from "next/headers"
-import { eq } from "drizzle-orm"
+import { eq,and } from "drizzle-orm"
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
@@ -83,18 +83,24 @@ export async function getSinglePost(
 export async function updatePost(
     {
         postId,
+        userId,
         content
+
     }: {
         postId: number,
+        userId: number,
         content: string
     }) {
     try {
-        await db.update(posts).set({
+        let updatedPost = await db.update(posts).set({
             "content": content
-        }).where(eq(posts.id, postId));
-
-        return {
-            "success": "post updated"
+        }).where(and(eq(posts.id, postId), eq(posts.userId, userId))).returning().run();
+        if(updatedPost){
+            return {
+                "success": "post updated"
+            }
+        } else{
+            return { "error": "cannot update post" }
         }
     } catch (err) {
         return { "error": "cannot update post" }
@@ -103,14 +109,20 @@ export async function updatePost(
 
 export async function deletePost(
     {
-        postId
+        postId,
+        userId,
     }: {
-        postId: number
+        postId: number,
+        userId: number
     }) {
     try {
-        await db.delete(posts).where(eq(posts.id, postId));
-        return {
-            "success": "post deleted"
+        const deletedPost = await db.delete(posts).where(and(eq(posts.id, postId),eq(posts.userId,userId))).returning().run();
+        if(deletedPost){
+            return {
+                "success": "post deleted"
+            }
+        } else{
+            return { "error": "cannot delete post" }
         }
     } catch (err) {
         return { "error": "cannot delete post" }

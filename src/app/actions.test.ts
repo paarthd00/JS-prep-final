@@ -1,6 +1,8 @@
 import { test, expect } from 'vitest';
 import {
   createUser,
+  updatePost,
+  deletePost,
   Login,
   getAllPost,
   getSinglePost,
@@ -56,21 +58,23 @@ test('getSinglePost', async () => {
 
 
 test('updatepost', async () => {
-  // const postIdToUpdate = 2;
-  
-  // const result = await updatePost({
-  //   postId: postIdToUpdate,
-  //   content: 'updatedPost',
-  // });
+  const postIdToUpdate = 4;
+  const userId = 3
 
-  // expect(result.success).toBe('post updated');
+  const result = await updatePost({
+    postId: postIdToUpdate,
+    userId: userId, 
+    content: 'updatedPost',
+  });
+
+  expect(result.success).toBe('post updated');
 
 });
 
 
 test('deletepost', async () => {
   // const postIdToDelete = 2;
-  
+
   // const result = await DeletePost({
   //   postId: postIdToUpdate,
   // });
