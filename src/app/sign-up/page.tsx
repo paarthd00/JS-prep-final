@@ -1,12 +1,11 @@
 "use client"
 import React from "react"
 import { createUser } from "../actions"
-import { redirect } from "next/navigation"
-
+import { useRouter } from 'next/navigation'
 export default function SignUp(){
   const [userName, setUserName] = React.useState<string>("")
   const [password,  setPassword] = React.useState<string>("")
-
+  const router = useRouter()
   const handleAddUser = async (e: React.FormEvent) =>{
     e.preventDefault()
 
@@ -16,7 +15,7 @@ export default function SignUp(){
     })
 
     if(resp.success){
-      redirect("/posts");
+      router.replace(`/posts`)
     }
   }
   return (
