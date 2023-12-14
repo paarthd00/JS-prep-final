@@ -93,7 +93,7 @@ export async function Login(
 
 export async function getAllPost() {
     try{
-        const allPosts = await db.select().from(posts);
+        const allPosts = await db.select().from(users).innerJoin(posts, eq(users.id, posts.userId));
         if(allPosts){
             return {
                 "success": "all posts",

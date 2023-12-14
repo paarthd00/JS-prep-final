@@ -1,39 +1,44 @@
 "use client"
 import React from "react"
 import { createUser } from "../actions"
+import { redirect } from "next/navigation"
+
 export default function SignUp(){
   const [userName, setUserName] = React.useState<string>("")
   const [password,  setPassword] = React.useState<string>("")
 
   const handleAddUser = async (e: React.FormEvent) =>{
     e.preventDefault()
-    
-   let resp =  await createUser({
+
+    let resp =  await createUser({
       userName: userName,
       password: password
     })
 
     if(resp.success){
-      console.log(resp.signedUser)
+      redirect("/posts");
     }
-
-    console.log(userName)
-    console.log(password);
   }
   return (
-    <form onSubmit={handleAddUser}>
-      <input 
-        className="text-black"
-        placeholder="username"
-        onChange={(e)=>{setUserName(e.target.value)}}>
-      </input>
-      <input 
-        className="text-black"
-        placeholder="password"
-        type="password"
-        onChange={(e)=>{setPassword(e.target.value)}}>
-      </input>
-      <input type="submit" value="signup"></input>
-    </form>
-  )
+    <div className=" flex flex-col  justify-center items-center">
+      <h1 className="text-xxl">
+        Signup Page
+      </h1>
+      <form 
+        className="flex flex-col gap-2 w-[25rem]"
+        onSubmit={handleAddUser} >
+        <input 
+          className="text-black p-4 rounded"
+          placeholder="username"
+          onChange={(e)=>{setUserName(e.target.value)}}>
+        </input>
+        <input 
+          className="text-black p-4 rounded"
+          placeholder="password"
+          type="password"
+          onChange={(e)=>{setPassword(e.target.value)}}>
+        </input>
+        <input className="bg-slate-500 rounded p-3 w-[50%] mx-auto" type="submit" value="Signup"></input>
+      </form>
+    </div>  )
 }

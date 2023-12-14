@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-
+import Link from 'next/link'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -12,11 +12,19 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
-}) {
+    children: React.ReactNode
+  }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <div className='flex justify-evenly py-4 w-full px-5'> 
+          <Link href="/">Home</Link>
+          <Link href="/sign-up">Sign Up</Link>
+          <Link href="/login">Login</Link>
+          <Link href="/create-post">Create Post</Link>
+          <Link href="/posts">Posts</Link>
+        </div>
+        {children}</body>
     </html>
   )
 }
