@@ -1,6 +1,6 @@
 "use client"
 import React from "react"
-import { createUser } from "../actions"
+import { signUp} from "../actions"
 import { useRouter } from 'next/navigation'
 export default function SignUp(){
   const [userName, setUserName] = React.useState<string>("")
@@ -9,7 +9,7 @@ export default function SignUp(){
   const handleAddUser = async (e: React.FormEvent) =>{
     e.preventDefault()
 
-    let resp =  await createUser({
+    let resp =  await signUp({
       userName: userName,
       password: password
     })

@@ -1,13 +1,13 @@
 "use server"
-
-import { db } from "@/db"
-import { users } from "@/db/schema/users"
-import { posts } from "@/db/schema/posts"
+import { db } from "../db/index"
+import { users } from "../db/schema/users"
+import { posts } from "../db/schema/posts"
 import { cookies } from "next/headers"
 import { eq } from "drizzle-orm"
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+
 export async function createPost(
     {
         userId,
@@ -30,8 +30,20 @@ export async function createPost(
     }
 
     return {
-        "success": "Post added Sexfully",
+        "success": "Post added",
         "postData": postData
+    }
+}
+
+export async function deleteUser(
+    { userId }: { userId: number }
+) {
+    try {
+        await db.delete(users).where(eq(users.id, userId));
+        return userId;
+    } catch (err) {
+        console.log(err);
+        return "Error encountered while deleting user"
     }
 }
 
@@ -44,46 +56,58 @@ export async function createUser(
         password: string
     }
 ) {
+    //@ts-ignore
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hash = bcrypt.hashSync(password, salt);
 
-    let signedUser;
+    const userInDB = await db.select()
+        .from(users)
+        .where(eq(users.username, userName))
+        .then((res) => res[0])
 
-    try {
-        //@ts-ignore
-        const salt = bcrypt.genSaltSync(saltRounds);
-        const hash = bcrypt.hashSync(password, salt);
+    let result = await db.insert(users).values({
+        "username": userName,
+        "password": hash
+    }).returning().run()
 
-        const userInDB = await db.select()
-            .from(users)
-            .where(eq(users.username, userName))
-            .then((res) => res[0])
+    let signedUser = {
+        id: result.rows[0].id,
+        username: result.rows[0].username,
+        password: result.rows[0].password
+    };
 
-        if (userInDB) {
-            return { "failure": "user already exists" }
+    console.log({ signedUser });
+
+    return signedUser;
+}
+
+export async function signUp(
+    {
+        userName,
+        password
+    }: {
+        userName: string,
+        password: string
+    }
+) {
+    let addedUser = await createUser({ userName, password });
+    // if(!addedUser.failure){
+    jwt.sign({ user: userName }, process.env.SECRET, (err: Error, token: string) => {
+        if (err) {
+            console.log(err);
+            throw new Error("Unable to log in")
         }
-
-        signedUser = await db.insert(users).values({
-            "username": userName,
-            "password": hash
-        }).returning().run()
-
-        jwt.sign({user: userName}, process.env.SECRET, (err: Error, token: string) => {
-            if (err) { 
-                console.log(err);
-                throw new Error("Unable to log in") }
-            cookies().set("user_token", token)
-            cookies().set("user_name", userName);
-        });
-
+        cookies().set("user_token", token)
         cookies().set("user_name", userName);
-
-    } catch (err) {
-        return { "failure": "Unable to add user" }
-    }
-
+    });
     return {
-        "success": "user add successfully",
-        "signedUser": signedUser
+        "success": "Signed up user successfully",
+        user: addedUser
     }
+
+    // } else{
+    //     return {"failure": "Error While Signing up user"} 
+    // }
 }
 
 export async function Login(
@@ -105,13 +129,13 @@ export async function Login(
             delete (currentUser as { password?: string }).password;
 
             jwt.sign(currentUser, process.env.SECRET, (err: Error, token: string) => {
-                if (err) { 
+                if (err) {
                     console.log(err);
-                    throw new Error("Unable to log in") }
+                    throw new Error("Unable to log in")
+                }
                 cookies().set("user_token", token)
                 cookies().set("user_name", userName);
             });
-
             return { "success": "user log in" }
         } else {
             throw new Error("Unable to log in")
@@ -139,7 +163,6 @@ export async function getAllPost() {
         return { "error": "cannot find posts" }
     }
 }
-// get single post from db based on the post id passed in the params
 
 export async function getSinglePost(
     {
