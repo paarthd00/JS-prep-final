@@ -20,7 +20,7 @@ export default async function Posts() {
     return (
         <div className="flex flex-col items-center justify-center">
             {
-                posts.map((post:typePost,i:number) => {
+                posts?.map((post:typePost,i:number) => {
                     return (
                         <div key={i} className="bg-slate-500 rounded p-4">
                             <h1>{post.users.username}</h1>

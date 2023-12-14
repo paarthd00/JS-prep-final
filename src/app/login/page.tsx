@@ -18,7 +18,7 @@ export default function Login(){
 
     if(resp.success){
       setMessage("Logged in!");
-      router.replace(`/posts`)
+       router.replace(`/posts`)
     } else {
       setMessage(resp.failure || "Something went wrong");
     }

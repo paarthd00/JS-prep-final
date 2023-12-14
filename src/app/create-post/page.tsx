@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import CreatePostForm from "../components/create-form";
 
 export default async function createPost() {
+
+
   const username = cookies().get("user_name")?.value
   let currentUser = await db.select()
     .from(users)
@@ -17,7 +19,7 @@ export default async function createPost() {
   return (
     <>
       {
-        currentUser ? <CreatePostForm userId={currentUser.id} />
+        currentUser?.username ? <CreatePostForm userId={currentUser?.id} />
           : <div>Not logged in</div>
       }
     </>

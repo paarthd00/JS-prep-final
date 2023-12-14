@@ -3,8 +3,9 @@
 import { db } from "@/db"
 import { users } from "@/db/schema/users"
 import { posts } from "@/db/schema/posts"
-import {cookies} from "next/headers"
+import { cookies } from "next/headers"
 import { eq } from "drizzle-orm"
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 export async function createPost(
@@ -18,9 +19,6 @@ export async function createPost(
     let postData;
 
     try {
-
-        console.log("userId: ", userId)
-        console.log("content: ", content)
         postData = await db.insert(posts).values({
             "userId": userId,
             "content": content
@@ -54,9 +52,12 @@ export async function createUser(
         const salt = bcrypt.genSaltSync(saltRounds);
         const hash = bcrypt.hashSync(password, salt);
 
-        const userInDB = await db.select().from(users).where(eq(users.username, userName)).then((res)=>res[0])
+        const userInDB = await db.select()
+            .from(users)
+            .where(eq(users.username, userName))
+            .then((res) => res[0])
 
-        if(userInDB){
+        if (userInDB) {
             return { "failure": "user already exists" }
         }
 
@@ -64,6 +65,14 @@ export async function createUser(
             "username": userName,
             "password": hash
         }).returning().run()
+
+        jwt.sign({user: userName}, process.env.SECRET, (err: Error, token: string) => {
+            if (err) { 
+                console.log(err);
+                throw new Error("Unable to log in") }
+            cookies().set("user_token", token)
+            cookies().set("user_name", userName);
+        });
 
         cookies().set("user_name", userName);
 
@@ -81,44 +90,53 @@ export async function Login(
     {
         userName,
         password
-    }:{
+    }: {
         userName: string,
         password: string
     }
-){
-    try{
+) {
+    try {
         let currentUser = await db.select()
             .from(users)
             .where(eq(users.username, userName))
-            .then((res)=>res[0])
+            .then((res) => res[0])
 
-        if(currentUser && bcrypt.compareSync(password, currentUser.password)){
-            cookies().set("user_name", currentUser.username)
-            return { "success": "user log in"} 
-        } else{
+        if (currentUser && bcrypt.compareSync(password, currentUser.password)) {
+            delete (currentUser as { password?: string }).password;
+
+            jwt.sign(currentUser, process.env.SECRET, (err: Error, token: string) => {
+                if (err) { 
+                    console.log(err);
+                    throw new Error("Unable to log in") }
+                cookies().set("user_token", token)
+                cookies().set("user_name", userName);
+            });
+
+            return { "success": "user log in" }
+        } else {
             throw new Error("Unable to log in")
         }
-    } catch(err){
+    } catch (err) {
         return { "failure": "user unable to log in" }
     }
 }
 
 export async function getAllPost() {
-    try{
+    try {
         const allPosts = await db.select()
             .from(users)
             .innerJoin(posts, eq(users.id, posts.userId));
 
-        if(allPosts){
+        if (allPosts) {
             return {
                 "success": "all posts",
                 "posts": allPosts
             }
-        } else{
-            return {"error": "cannot find posts"}
+        } else {
+            return { "error": "cannot find posts" }
         }
-    } catch(err){
-        return {"error": "cannot find posts"}
+    } catch (err) {
+        return { "error": "cannot find posts" }
     }
 }
 // get single post from db based on the post id passed in the params
@@ -126,25 +144,25 @@ export async function getAllPost() {
 export async function getSinglePost(
     {
         postId
-    }:{
+    }: {
         postId: number
     }) {
-    try{
+    try {
         const singlePost = await db.select()
             .from(posts)
             .where(eq(posts.id, postId))
-            .then((res)=>res[0]);
+            .then((res) => res[0]);
 
-        if(singlePost){
+        if (singlePost) {
             return {
                 "success": "single post",
                 "post": singlePost
             }
-        } else{
-            return {"error": "cannot find post"}
+        } else {
+            return { "error": "cannot find post" }
         }
-    } catch(err){
-        return {"error": "cannot find post"}
-    }                        
+    } catch (err) {
+        return { "error": "cannot find post" }
+    }
 }
 
