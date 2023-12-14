@@ -4,6 +4,7 @@ import { users } from "../db/schema/users"
 import { posts } from "../db/schema/posts"
 import { cookies } from "next/headers"
 import { eq,and } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
@@ -185,14 +186,9 @@ export async function signUp(
     }
 ) {
     let addedUser = await createUser({ userName, password });
-    jwt.sign({ user: userName }, process.env.SECRET, (err: Error, token: string) => {
-        if (err) {
-            console.log(err);
-            throw new Error("Unable to log in")
-        }
-        cookies().set("user_token", token)
-        cookies().set("user_name", userName);
-    });
+    const accessToken =  jwt.sign({ user: userName}, process.env.SECRET, { expiresIn: "1h" })
+    cookies().set("user_token",accessToken);
+    cookies().set("user_name",userName);
     return {
         "success": "Signed up user successfully",
         user: addedUser
@@ -216,15 +212,9 @@ export async function Login(
 
         if (currentUser && bcrypt.compareSync(password, currentUser.password)) {
             delete (currentUser as { password?: string }).password;
-
-            jwt.sign(currentUser, process.env.SECRET, (err: Error, token: string) => {
-                if (err) {
-                    console.log(err);
-                    throw new Error("Unable to log in")
-                }
-                cookies().set("user_token", token)
-                cookies().set("user_name", userName);
-            });
+            const accessToken =  jwt.sign({ user: currentUser.username}, process.env.SECRET, { expiresIn: "1h" })
+            cookies().set("user_token",accessToken);
+            cookies().set("user_name",userName);
             return { "success": "user log in" }
         } else {
             throw new Error("Unable to log in")
@@ -234,4 +224,25 @@ export async function Login(
     }
 }
 
-
+export async function verifyToken(
+    {
+        token,
+        username
+    }: {
+        token: string,
+        username: string
+    }
+){
+    try {
+        const decoded = jwt.verify(token, process.env.SECRET);
+        if(decoded.user == username){
+            revalidatePath("/posts");
+            return {"success":"Verified"} 
+        } else{
+            revalidatePath("/posts");
+            return {"failure":"Error Token not validated"}
+        }
+    } catch (err) {
+        return {"failure":"Error Token not validated"}
+    }
+}
